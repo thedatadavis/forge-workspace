@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FORGE Prospect Capture</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+
+    :root {
+      --bg: #0c0c0e;
+      --surface: #141416;
+      --border: #262629;
+      --accent: #f0b429;
+      --accent-dim: rgba(240, 180, 41, 0.12);
+      --text: #e8e8ec;
+      --muted: #6b6b74;
+      --hot: #ff4d4d;
+      --warm: #f0b429;
+      --cold: #4d9fff;
+      --success: #3ecf8e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 360px;
+      min-height: 480px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    .logo span {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .status-dot.active { background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+    .companion-indicator {
+      font-size: 9px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .companion-indicator.connected { color: var(--success); }
+    .companion-indicator.offline { color: var(--muted); }
+
+    /* Page type badge */
+    .page-type {
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      padding: 2px 7px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .badge-linkedin { background: rgba(10, 102, 194, 0.25); color: #5b9bd5; }
+    .badge-web { background: var(--accent-dim); color: var(--accent); }
+    .badge-unknown { background: rgba(107, 107, 116, 0.2); color: var(--muted); }
+
+    .page-url {
+      color: var(--muted);
+      font-size: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    /* Sections */
+    .section {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .field {
+      margin-bottom: 8px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 6px 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .field select option {
+      background: var(--bg);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Auto-extracted indicator */
+    .extracted {
+      position: relative;
+    }
+    .extracted::after {
+      content: '✦';
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 10px;
+      pointer-events: none;
+    }
+    .extracted input { padding-right: 22px; }
+
+    /* Actions */
+    .actions {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-primary:hover { background: #f5c842; }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Result area */
+    .result {
+      display: none;
+      margin: 0 16px 14px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .result.success {
+      display: block;
+      background: rgba(62, 207, 142, 0.1);
+      border: 1px solid rgba(62, 207, 142, 0.25);
+      color: var(--success);
+    }
+
+    .result.error {
+      display: block;
+      background: rgba(255, 77, 77, 0.1);
+      border: 1px solid rgba(255, 77, 77, 0.25);
+      color: var(--hot);
+    }
+
+    /* Copy output */
+    .markdown-output {
+      display: none;
+      margin: 0 16px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px;
+    }
+    .markdown-output.visible { display: block; }
+
+    .markdown-output pre {
+      font-size: 10px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .copy-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .copy-label {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .copy-btn {
+      font-size: 9px;
+      padding: 2px 8px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(240, 180, 41, 0.3);
+      border-radius: 3px;
+      color: var(--accent);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.05em;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { background: var(--accent); color: #000; }
+
+    /* Auto-extract banner */
+    .auto-banner {
+      display: none;
+      padding: 8px 16px;
+      background: var(--accent-dim);
+      border-bottom: 1px solid rgba(240, 180, 41, 0.2);
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .auto-banner.visible { display: block; }
+
+    /* Scrollable body */
+    .scroll-body {
+      max-height: 540px;
+      overflow-y: auto;
+    }
+    .scroll-body::-webkit-scrollbar { width: 3px; }
+    .scroll-body::-webkit-scrollbar-thumb { background: var(--border); }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">FORGE <span>PROSPECT CAPTURE</span></div>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span id="companionIndicator" style="font-size: 9px; color: var(--muted); letter-spacing: 0.05em;"></span>
+    <div class="status-dot" id="statusDot"></div>
+    <button id="settingsLink" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+  </div>
+</div>
+
+<div class="auto-banner" id="autoBanner">
+  ✦ LinkedIn data auto-extracted — review and capture
+</div>
+
+<div class="page-type">
+  <span class="badge badge-unknown" id="pageBadge">—</span>
+  <span class="page-url" id="pageUrl"></span>
+</div>
+
+<div class="scroll-body">
+
+  <div class="section">
+    <div class="section-title">Individual / Contact</div>
+    <div class="field-row">
+      <div class="field extracted">
+        <label>Name *</label>
+        <input type="text" id="contactName" placeholder="Jane Smith" />
+      </div>
+      <div class="field extracted">
+        <label>Title</label>
+        <input type="text" id="contactTitle" placeholder="Marketing Dir." />
+      </div>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="text" id="contactEmail" placeholder="jane@acme.com" />
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Company / Organization</div>
+    <div class="field extracted">
+      <label>Company Name</label>
+      <input type="text" id="company" placeholder="Acme Auto Group" />
+    </div>
+    <div class="field-row">
+      <div class="field extracted">
+        <label>Industry / Category</label>
+        <input type="text" id="industry" placeholder="Auto Dealership" />
+      </div>
+      <div class="field extracted">
+        <label>Geography</label>
+        <input type="text" id="geography" placeholder="Austin, TX" />
+      </div>
+    </div>
+    <div class="field extracted">
+      <label>Website</label>
+      <input type="text" id="website" placeholder="https://" />
+    </div>
+    <div class="field extracted">
+      <label>Company Size</label>
+      <input type="text" id="size" placeholder="51–200 employees" />
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Fit Signals</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Local Presence</label>
+        <select id="localPresence">
+          <option value="">— unknown</option>
+          <option value="Yes">Yes — local</option>
+          <option value="Regional">Regional</option>
+          <option value="National">National</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Known Sponsor?</label>
+        <select id="knownSponsor">
+          <option value="Unknown">Unknown</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Category Active in Local Sports?</label>
+      <select id="activeInSports">
+        <option value="Unknown">Unknown</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Budget Signal</label>
+      <input type="text" id="budgetSignal" placeholder="Runs FB ads, has marketing staff..." />
+    </div>
+    <div class="field">
+      <label>Audience Alignment Notes</label>
+      <textarea id="audienceAlignment" placeholder="Their customers match our fans because..."></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Capture Notes</div>
+    <div class="field">
+      <textarea id="notes" placeholder="Raw notes — paste anything here. Why are they interesting? Where did you find them?"></textarea>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="captureBtn">Capture Prospect → Markdown</button>
+    <button class="btn btn-secondary" id="extractBtn">Re-extract from Page</button>
+  </div>
+
+  <div class="result" id="resultBox"></div>
+
+  <div class="markdown-output" id="markdownOutput">
+    <div class="copy-bar">
+      <span class="copy-label">Markdown Output</span>
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+    <pre id="markdownPre"></pre>
+  </div>
+
+</div>
+
+<script src="src/popup.js"></script>
+</body>
+</html>
